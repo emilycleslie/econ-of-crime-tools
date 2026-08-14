@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Becker model explorer — ECON 413R</title>
+<style>
+  :root{
+    --navy:#00264C; --accent:#005A9C; --warm:#B02A2A; --orange:#D07000;
+    --gray:#5B6470; --surface:#fcfcfb; --box:#eef3f8; --rule:#d7dde3;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--surface); color:var(--navy);
+       font:16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;}
+  main{max-width:900px; margin:0 auto; padding:28px 20px 60px}
+  h1{font-size:1.7rem; margin:0 0 2px}
+  h2{font-size:1.25rem; margin:38px 0 6px; padding-top:22px; border-top:2px solid var(--rule)}
+  .kicker{color:var(--gray); font-size:.9rem; margin:0 0 14px}
+  .jump{font-size:.85rem; color:var(--gray); margin:0 0 16px}
+  .jump a{color:var(--accent); text-decoration:none; font-weight:600}
+  .when{display:inline-block; background:var(--box); color:var(--accent); font-size:.78rem;
+        font-weight:600; border-radius:99px; padding:2px 10px; margin-left:8px; vertical-align:2px}
+  p{margin:.5em 0}
+  var{font-family:Georgia,"Times New Roman",serif; font-style:italic}
+  fieldset.controls{display:flex; flex-wrap:wrap; gap:14px 26px; background:var(--box);
+            border:0; border-radius:10px; padding:14px 16px; margin:14px 0}
+  fieldset[disabled]{opacity:.45}
+  fieldset.worldbox{background:#fff; border:1.5px dashed var(--gray)}
+  .boxlabel{flex-basis:100%; font-size:.78rem; font-weight:700; letter-spacing:.02em;
+            color:var(--accent); margin:-2px 0 -6px}
+  .worldbox .boxlabel{color:var(--gray)}
+  .ctl{min-width:170px; flex:1}
+  .ctl label{display:block; font-size:.82rem; font-weight:600; margin-bottom:2px}
+  .ctl output{color:var(--accent); font-weight:700}
+  input[type=range]{width:100%; accent-color:var(--accent)}
+  .presets{display:flex; gap:8px; align-items:center; flex-basis:100%; flex-wrap:wrap; font-size:.85rem}
+  button{font:inherit; font-size:.85rem; font-weight:600; color:var(--accent);
+         background:#fff; border:1.5px solid var(--accent); border-radius:8px;
+         padding:4px 12px; cursor:pointer}
+  button:hover{background:var(--accent); color:#fff}
+  button.ghost{border-color:var(--gray); color:var(--gray)}
+  .betanote{background:#fff; border:1.5px solid var(--rule); border-left:4px solid var(--accent);
+        border-radius:10px; padding:10px 14px; margin:0 0 16px; font-size:.95rem}
+  .tour{background:#fff; border:1.5px solid var(--accent); border-radius:10px;
+        padding:12px 16px; margin:14px 0; font-size:.95rem}
+  .tour b{color:var(--accent)}
+  .tour .tbtns{margin-top:8px; display:flex; gap:8px; align-items:center}
+  .tour .tstep{color:var(--gray); font-size:.8rem; margin-left:auto}
+  .readout{display:flex; flex-wrap:wrap; gap:10px 28px; margin:10px 0 4px; font-size:.95rem; align-items:baseline}
+  .readout b{font-size:1.15rem}
+  .chip{font-weight:700}
+  .chartwrap{overflow-x:auto}
+  svg{width:100%; height:auto; display:block}
+  canvas{width:100%; max-width:560px; height:auto; display:block; touch-action:none; cursor:crosshair}
+  .caption{color:var(--gray); font-size:.85rem; margin:6px 0 0}
+  details{margin:12px 0; background:#fff; border:1.5px solid var(--rule); border-radius:10px; padding:10px 14px}
+  summary{cursor:pointer; font-weight:600; color:var(--accent)}
+  details p{font-size:.93rem}
+  table{border-collapse:collapse; margin:12px 0; font-size:.92rem}
+  th,td{text-align:left; padding:5px 14px 5px 0; border-bottom:1px solid var(--rule); vertical-align:top}
+  th{color:var(--gray); font-size:.8rem}
+  .caveat{border:1.5px solid var(--warm); border-radius:10px; padding:12px 16px; margin:18px 0; font-size:.92rem}
+  .caveat b{color:var(--warm)}
+  .footer{color:var(--gray); font-size:.85rem; margin-top:40px; border-top:2px solid var(--rule); padding-top:14px}
+  .duo{display:flex; flex-wrap:wrap; gap:18px; align-items:flex-start}
+  .duo>.dleft{flex:1 1 340px}
+  .duo>.dright{flex:1 1 240px}
+  .statbig{font-size:2.1rem; font-weight:800; line-height:1.1}
+  .legend{font-size:.85rem; color:var(--gray); margin-top:6px}
+  .dotkey{display:inline-block; width:.8em; height:.8em; border-radius:50%; vertical-align:-1px; margin-right:4px}
+  .sweeplabels{display:flex; justify-content:space-between; font-size:.78rem; color:var(--gray); margin-top:-4px}
+</style>
+</head>
+<body>
+<main>
+  <h1>The Becker model, hands on</h1>
+  <p class="kicker">ECON 413R · Economics of Crime · A companion to Becker (1968) as we build it in class</p>
+  <p class="jump">Jump to:
+    <a href="#s1">1 The gamble</a> ·
+    <a href="#s2">2 Who is deterred?</a> ·
+    <a href="#s3">3 The planner's map</a> ·
+    <a href="#s4">4 Cheaper detection</a></p>
+
+  <div class="betanote"><b>A note before you start:</b> This page is an experiment. It is new
+  this semester, and you are the first students to use it. If something is confusing, if an
+  explanation doesn't land, or if you have an idea that would make it more interesting or more
+  useful, please tell me. I welcome feedback of every kind.</div>
+
+  <p>This page lets you push on the model we are building in class. Each part opens with a short
+  guided intro that builds its picture one piece at a time; the sliders unlock when the intro is
+  done (or skipped). The way to use each part is to <b>predict first, then drag</b>. Parts 1 and 2
+  use Becker day one; parts 3 and 4 use the planner's problem from day two.</p>
+
+  <!-- ================= PANEL 1 ================= -->
+  <h2 id="s1">1 · The offender's gamble<span class="when">After Becker I</span></h2>
+  <p>A person offends when the gamble beats the sure outside option: with probability <var>p</var>
+  they are caught and keep <var>Y</var>&nbsp;−&nbsp;<var>f</var>; otherwise they keep <var>Y</var>.
+  The gain from the offense is fixed at <var>Y</var>&nbsp;=&nbsp;$1,000, as in class.</p>
+
+  <div class="tour" id="tour1">
+    <b>What am I looking at?</b> <span id="ttext1"></span>
+    <div class="tbtns"><button class="ghost" id="tback1">Back</button><button id="tnext1">Next</button>
+      <button class="ghost" id="tskip1">Skip intro</button>
+      <span class="tstep" id="tstep1"></span></div>
+  </div>
+
+  <details><summary>Predict before you drag</summary>
+    <p>Set up System A from class (preset below). You can push the expected penalty from $120 to
+    $200 two ways: raise the fine to $1,000, or raise the probability to about one in three
+    (<var>p</var> = 0.33). For which risk attitudes do those two moves feel different, and which
+    one deters this person more?</p>
+  </details>
+
+  <fieldset class="controls" id="fs1" disabled>
+    <div class="ctl"><label>Probability of conviction <var>p</var> = <output id="o_p1"></output></label>
+      <input type="range" id="p1" min="0.02" max="0.98" step="0.01" value="0.20"></div>
+    <div class="ctl"><label>Punishment <var>f</var> = <output id="o_f1"></output></label>
+      <input type="range" id="f1" min="0" max="1000" step="10" value="600"></div>
+    <div class="ctl"><label>Outside option <var>Y&#771;</var> = <output id="o_yt1"></output></label>
+      <input type="range" id="yt1" min="0" max="1000" step="10" value="850"></div>
+    <div class="ctl"><label>Risk preference (curvature of <var>U</var>): <output id="o_g1"></output></label>
+      <input type="range" id="g1" min="0.3" max="2" step="0.05" value="0.6"></div>
+    <div class="presets">Presets:
+      <button id="sysA">System A (p=.20, f=600)</button>
+      <button id="sysB">System B (p=.80, f=150)</button>
+    </div>
+  </fieldset>
+
+  <div class="readout">
+    <span>Expected income <var>Y</var>−<var>pf</var>: <b id="r_ei"></b></span>
+    <span>Sure income that feels the same (CE): <b id="r_ce"></b></span>
+    <span class="chip" id="r_dec"></span>
+  </div>
+
+  <div class="chartwrap"><div id="chart1"></div></div>
+  <p class="caption">The curve is the utility function <var>U</var>(<var>c</var>) = <var>c</var><sup>γ</sup>
+  (γ &lt; 1 risk-averse, γ = 1 risk-neutral, γ &gt; 1 risk-loving). In survey Q4 you reported the
+  sure salary that felt the same as a 50/50 job: that number was your certainty equivalent for
+  that gamble, and the orange CE here is the same idea for this one.</p>
+
+  <!-- ================= PANEL 2 ================= -->
+  <h2 id="s2">2 · Who is deterred?<span class="when">After Becker I</span></h2>
+  <p>Now 100 people face the same tempting opportunity (<var>Y</var> = $1,000). They differ in
+  two ways: their legal outside options and their risk attitudes. Each one runs the Part-1
+  comparison for themselves; you set the policy and watch who offends.</p>
+
+  <div class="tour" id="tour2">
+    <b>What am I looking at?</b> <span id="ttext2"></span>
+    <div class="tbtns"><button class="ghost" id="tback2">Back</button><button id="tnext2">Next</button>
+      <button class="ghost" id="tskip2">Skip intro</button>
+      <span class="tstep" id="tstep2"></span></div>
+  </div>
+
+  <details><summary>Predict before you drag</summary>
+    <p>Turn on "hold expected penalty fixed" and swing the slider from low <var>p</var> (rare but
+    harsh) to high <var>p</var> (likely but mild). The expected penalty never changes. For a mostly
+    risk-averse population, does offending rise or fall? Write your guess down, then check the
+    other populations.</p>
+  </details>
+
+  <fieldset class="controls worldbox" id="fs2w" disabled>
+    <div class="boxlabel">The population — a parameter, not a choice</div>
+    <div class="presets">Risk attitudes of the 100:
+      <label><input type="radio" name="pop2" value="averse"> Mostly risk-averse</label>
+      <label><input type="radio" name="pop2" value="mixed" checked> Mixed</label>
+      <label><input type="radio" name="pop2" value="loving"> Mostly risk-loving</label>
+    </div>
+  </fieldset>
+
+  <fieldset class="controls" id="fs2" disabled>
+    <div class="boxlabel">Your levers</div>
+    <div class="ctl"><label>Certainty <var>p</var> = <output id="o_p2"></output></label>
+      <input type="range" id="p2" min="0.05" max="0.95" step="0.005" value="0.30"></div>
+    <div class="ctl"><label>Severity <var>f</var> = <output id="o_f2"></output></label>
+      <input type="range" id="f2" min="0" max="1000" step="5" value="400"></div>
+    <div class="presets">
+      <label><input type="checkbox" id="hold2"> Hold expected penalty <var>pf</var> fixed
+        (<output id="o_k2"></output>)</label>
+      <button id="sysA2">System A (p=.20, f=600)</button>
+      <button id="sysB2">System B (p=.80, f=150)</button>
+    </div>
+  </fieldset>
+
+  <div class="duo">
+    <div class="dleft chartwrap"><div id="chart2"></div></div>
+    <div class="dright">
+      <div class="statbig" style="color:var(--warm)"><span id="r_n2"></span> of 100</div>
+      <div>choose to offend</div>
+      <div class="readout" style="margin-top:10px">
+        <span>Expected penalty <var>pf</var>: <b id="r_pf2"></b></span>
+      </div>
+      <div class="legend">
+        <span class="dotkey" style="background:#B02A2A"></span>offends&emsp;
+        <span class="dotkey" style="background:#e6e9ec; border:1.5px solid #b7bfc7"></span>doesn't
+      </div>
+      <div class="legend">Shape is risk attitude: <b>●</b> circles are risk-averse,
+        <b>◆</b> diamonds are risk-loving.</div>
+      <div class="legend">People are arranged by legal outside option: bottom rows have the least
+        to lose, top rows the most. The boundary is ragged because risk attitudes differ within
+        the population.</div>
+    </div>
+  </div>
+  <p class="caption">The class question this panel is built for: with the expected penalty held
+  fixed, certainty-for-severity swaps change <b>who</b> is deterred — and the direction of the
+  change depends on the population's risk attitude. The people most sensitive to each lever are
+  the ones near the boundary, not the ones deep in either region.</p>
+
+  <!-- ================= PANEL 3 ================= -->
+  <h2 id="s3">3 · The planner's map<span class="when">After Becker II</span></h2>
+  <p>Now you are the planner, and this is your whole problem on one map. You choose only two
+  things: <var>p</var> and <var>f</var>. Your goal is to minimize social loss,
+  <var>L</var> = <var>D</var>(<var>O</var>) + <var>C</var>(<var>p</var>,<var>O</var>) + <var>bpfO</var>,
+  and offenses respond to your choices. Everything else — the cost of punishment <var>b</var>,
+  the elasticity with respect to certainty <var>η</var><sub>O,p</sub>, and the elasticity with
+  respect to severity <var>η</var><sub>O,f</sub> — is a parameter the planner cannot control:
+  together they define the world you are choosing in.</p>
+
+  <div class="tour" id="tour3">
+    <b>What am I looking at?</b> <span id="ttext3"></span>
+    <div class="tbtns"><button class="ghost" id="tback3">Back</button><button id="tnext3">Next</button>
+      <button class="ghost" id="tskip3">Skip intro</button>
+      <span class="tstep" id="tstep3"></span></div>
+  </div>
+
+  <details><summary>Predict before you drag</summary>
+    <p>(1) With <var>b</var> = 0 (fines as pure transfers), where on the map should the valley sit?
+    (2) When detection gets cheaper, which way does the valley move? (3) In the
+    severity-responsive world, what does the planner do with <var>f</var>? Check all three below.</p>
+  </details>
+
+  <fieldset class="controls" id="fs3L" disabled>
+    <div class="boxlabel">Your levers — the choice variables</div>
+    <div class="ctl"><label>Certainty <var>p</var> = <output id="o_p3"></output></label>
+      <input type="range" id="p3" min="0.05" max="0.95" step="0.005" value="0.30"></div>
+    <div class="ctl"><label>Severity <var>f</var> = <output id="o_f3"></output></label>
+      <input type="range" id="f3" min="50" max="1000" step="5" value="300"></div>
+    <div class="presets">
+      <button id="reveal3">Reveal the optimum</button>
+      <button id="resetBest">Reset my best</button>
+    </div>
+  </fieldset>
+
+  <fieldset class="controls worldbox" id="fs3W" disabled>
+    <div class="boxlabel">The world you're in — parameters that shape the terrain</div>
+    <div class="ctl"><label>Social cost of punishment <var>b</var> = <output id="o_b3"></output></label>
+      <input type="range" id="b3" min="0" max="3" step="0.1" value="1.5"></div>
+    <div class="ctl"><label>Elasticity w.r.t. certainty <var>η</var><sub>O,p</sub> = <output id="o_ep3"></output></label>
+      <input type="range" id="ep3" min="0.1" max="1.5" step="0.05" value="1.0">
+      <div class="sweeplabels"><span>offenses barely respond to <var>p</var></span><span>respond strongly to <var>p</var></span></div></div>
+    <div class="ctl"><label>Elasticity w.r.t. severity <var>η</var><sub>O,f</sub> = <output id="o_ef3"></output></label>
+      <input type="range" id="ef3" min="0.1" max="1.5" step="0.05" value="0.3">
+      <div class="sweeplabels"><span>offenses barely respond to <var>f</var></span><span>respond strongly to <var>f</var></span></div></div>
+    <div class="presets">
+      <label><input type="checkbox" id="cheap3"> Detection technology improves (cost of raising <var>p</var> falls)</label>
+      <button id="wCert">Certainty-responsive world</button>
+      <button id="wSev">Severity-responsive world</button>
+    </div>
+  </fieldset>
+  <p class="caption">Which world we actually live in — how strongly offenses respond to certainty
+  vs. severity — is an empirical question, not a modeling choice. That is what the semester's
+  papers are for.</p>
+
+  <div class="readout">
+    <span>Offenses <var>O</var>: <b id="r_O3"></b></span>
+    <span>Social loss <var>L</var>: <b id="r_L3"></b></span>
+    <span>Your best so far: <b id="r_best3"></b></span>
+    <span id="r_opt3" class="chip"></span>
+  </div>
+
+  <div class="duo">
+    <div class="dleft"><canvas id="cv3" width="560" height="430"></canvas>
+      <p class="caption">Click or drag on the map to choose a policy. Darker = higher social loss.</p></div>
+    <div class="dright chartwrap"><div id="chart3bar"></div></div>
+  </div>
+
+  <!-- ================= PANEL 4 ================= -->
+  <h2 id="s4">4 · What cheaper detection does to punishment<span class="when">After Becker II</span></h2>
+  <p>Fingerprints, case files, cameras, DNA: the cost of catching people has fallen for two
+  centuries. This panel re-solves the planner's problem at every level of detection cost and
+  traces where the optimum goes. It inherits the world you set in Part 3 (<var>b</var> and the
+  two elasticities); the slider below replaces the checkbox.</p>
+
+  <details><summary>Predict before you drag</summary>
+    <p>As catching people gets cheaper, what should happen to sentence severity? Drag the slider
+    from left (the past) to right (today) and watch the optimum move.</p>
+  </details>
+
+  <fieldset class="controls">
+    <div class="ctl" style="max-width:480px">
+      <label>Detection technology (cost of raising <var>p</var>: <var>c</var> = <output id="o_c4"></output>)</label>
+      <input type="range" id="c4" min="0" max="1" step="0.02" value="0">
+      <div class="sweeplabels"><span>the past: no fingerprints, no files</span><span>today: DNA, cameras, databases</span></div>
+    </div>
+  </fieldset>
+
+  <div class="readout">
+    <span>Optimal certainty <var>p</var><sup>*</sup>: <b id="r_ps4"></b></span>
+    <span>Optimal severity <var>f</var><sup>*</sup>: <b id="r_fs4"></b></span>
+    <span>Offenses at the optimum <var>O</var><sup>*</sup>: <b id="r_Os4"></b></span>
+    <span>Loss at the optimum <var>L</var><sup>*</sup>: <b id="r_Ls4"></b></span>
+  </div>
+
+  <div class="chartwrap"><div id="chart4"></div></div>
+  <p class="caption">Each dot is the loss-minimizing (<var>p</var><sup>*</sup>, <var>f</var><sup>*</sup>)
+  at one level of detection cost. The pattern to notice: harsh punishment is what expensive
+  detection looks like. When certainty is cheap, the planner substitutes toward it and severity
+  falls. (Where the path pins against the top edge, the model is at the severity ceiling — the
+  corner from class.) Forward link: DNA databases, when we get to Doleac.</p>
+
+  <div class="duo" id="chart4minis" style="margin-top:14px"></div>
+  <p class="caption">The other two dimensions of the same sweep. Loss at the optimum
+  <var>L</var><sup>*</sup> <b>always falls</b>: cheaper detection can only make the planner's
+  problem easier. Offenses at the optimum <var>O</var><sup>*</sup> can go either way: more
+  certainty pushes crime down, but milder punishment pushes it up, and which wins depends on the
+  world's parameters.</p>
+
+  <div class="caveat"><b>What this page is and is not.</b> The logic is Becker's; the specific
+  functional forms are illustrative so the sliders have something to move. Parts 1–2:
+  <var>U</var>(<var>c</var>) = <var>c</var><sup>γ</sup>; the 100 simulated people have outside
+  options spread evenly from $700 to $997 and γ ranges set by the population switch. Parts 3–4:
+  <var>O</var>(<var>p</var>,<var>f</var>) = 100·(<var>p</var>/0.3)<sup>−η<sub>O,p</sub></sup>·(<var>f</var>/300)<sup>−η<sub>O,f</sub></sup>,
+  <var>D</var>(<var>O</var>) = 5 + 0.03·(<var>O</var> − <var>O<sub>a</sub></var>)² with
+  <var>O<sub>a</sub></var> = 40, and <var>C</var>(<var>p</var>,<var>O</var>) = <var>c</var>·<var>p</var>²·<var>O</var>,
+  with <var>c</var> between 4 and 0.5 (the Part-3 checkbox uses 4 and 1.5, so the sweep starts
+  exactly at Part 3's baseline world). Loss is in index units, not dollars. None of these
+  numbers is estimated from data; the shapes, not the levels, are the lesson.</div>
+
+  <h2>Notation used on this page</h2>
+  <table>
+    <tr><th>Symbol</th><th>Meaning</th></tr>
+    <tr><td><var>O</var></td><td>Offenses (the activity level); <var>O<sub>a</sub></var> is where net damage bottoms out, <var>O</var><sup>*</sup> the planner's optimum</td></tr>
+    <tr><td><var>p</var></td><td>Probability an offense ends in conviction (certainty) — a choice variable in Parts 3–4</td></tr>
+    <tr><td><var>f</var></td><td>Sanction if convicted (severity) — the other choice variable</td></tr>
+    <tr><td><var>Y</var>, <var>Y&#771;</var></td><td>Income if the offense succeeds; income from the legal outside option</td></tr>
+    <tr><td><var>u</var></td><td>Everything else that shapes the decision (the outside option lives here)</td></tr>
+    <tr><td>CE</td><td>Certainty equivalent: the sure income that feels exactly as good as the gamble (your survey Q4 number)</td></tr>
+    <tr><td><var>D</var>(<var>O</var>) = <var>H</var>(<var>O</var>) − <var>G</var>(<var>O</var>)</td><td>Net damage: harm to others minus gain to offenders</td></tr>
+    <tr><td><var>C</var>(<var>p</var>,<var>O</var>), <var>c</var></td><td>Enforcement and processing cost; <var>c</var> indexes how expensive detection technology is (a parameter)</td></tr>
+    <tr><td><var>b</var>, <var>bf</var></td><td>Social cost per unit of punishment (<var>b</var> ≈ 0 for fines, <var>b</var> &gt; 1 for prison) — a parameter</td></tr>
+    <tr><td><var>η</var><sub>O,p</sub>, <var>η</var><sub>O,f</sub></td><td>Elasticities of offenses with respect to certainty and severity — parameters, and an empirical question</td></tr>
+  </table>
+
+  <p class="footer">Bring to class: one thing this page did that surprised you, and one thing you
+  tried to make it do that it could not. ECON 413R · Fall 2026.</p>
+</main>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const NAVY="#00264C", ACCENT="#005A9C", WARM="#B02A2A", ORANGE="#D07000",
+      GRAY="#5B6470", RULE="#d7dde3";
+const fmt$ = x => "$" + Math.round(x).toLocaleString();
+
+/*MODEL-START*/
+const Y1 = 1000;
+function un(c,g){ return Math.pow(Math.max(c,0)/Y1, g); }
+function ceOf(p,f,g){ const eu = p*un(Y1-f,g)+(1-p)*un(Y1,g); return Y1*Math.pow(eu, 1/g); }
+// Part 2 population: outside options $700–$997; gamma by profile, decorrelated stride
+const YT=[...Array(100)].map((_,i)=>700+3*i);
+function popGamma(pop,i){ const t=((i*37)%100)/99;
+  return pop==="averse" ? 0.25+0.45*t : pop==="loving" ? 1.3+0.9*t : 0.3+1.7*t; }
+function countOffend(p,f,pop){ let n=0;
+  for(let i=0;i<100;i++) if(ceOf(p,f,popGamma(pop,i))>YT[i]) n++;
+  return n; }
+// Parts 3–4 planner
+const PL={O0:100,p0:0.3,f0:300,Oa:40,Dmin:5,d:0.03};
+function ledger(p,f,ep,ef,b,c){
+  const O=PL.O0*Math.pow(p/PL.p0,-ep)*Math.pow(f/PL.f0,-ef);
+  const D=PL.Dmin+PL.d*(O-PL.Oa)**2, C=c*p*p*O, P=b*p*f*O/1000;
+  return {O,D,C,P,L:D+C+P};
+}
+function optimum(ep,ef,b,c,pstep,fstep){ let bst=null;
+  for(let p=0.05;p<=0.951;p+=pstep) for(let f=50;f<=1000.1;f+=fstep){
+    const L=ledger(p,f,ep,ef,b,c).L;
+    if(!bst||L<bst.L) bst={p,f,L};
+  }
+  return bst;
+}
+const cOfT = t => 4*Math.pow(0.5/4, t);   // slider t in [0,1] → c from 4 (past) to 0.5 (today); starts where the optimum is interior
+/*MODEL-END*/
+
+/* ---------- shared svg scaffolding ---------- */
+function axes(W,H,M,xlab,ylab){
+  return `<line x1="${M.l}" y1="${H-M.b}" x2="${W-M.r}" y2="${H-M.b}" stroke="${GRAY}" stroke-width="1"/>
+          <line x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${H-M.b}" stroke="${GRAY}" stroke-width="1"/>
+          <text x="${(M.l+W-M.r)/2}" y="${H-8}" fill="${GRAY}" font-size="12" text-anchor="middle">${xlab}</text>
+          <text x="14" y="${(M.t+H-M.b)/2}" fill="${GRAY}" font-size="12" text-anchor="middle"
+                transform="rotate(-90 14 ${(M.t+H-M.b)/2})">${ylab}</text>`;
+}
+function pathFrom(pts){ return "M" + pts.map(p=>p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" L "); }
+
+/* ---------- guided intros ---------- */
+const TOURS = {
+  1:[
+    "Start with the curve. It converts income (horizontal axis) into how much that income is worth to this person (vertical axis). Its bend is the person's risk attitude — drag the risk slider later and watch it flex.",
+    "An offense has two possible endings: caught, keeping Y − f, or free, keeping Y. Both endings sit on the curve.",
+    "The gamble lives on the straight line between the two endings. Its expected utility sits on that line, at expected income Y − pf.",
+    "Slide left from that point to the curve: the sure income that feels exactly as good as the gamble. You reported this number for the two jobs in survey Q4. Economists call it the certainty equivalent (CE).",
+    "Last piece: the triangle on the axis is the legal outside option. The person offends only if the gamble's CE beats it. The sliders are now yours."
+  ],
+  2:[
+    "Each shape is one of 100 people deciding whether to offend: circles are risk-averse people, diamonds risk-loving. They are arranged by their legal outside option: bottom rows have the least to lose, top rows the most.",
+    "Red shapes choose to offend at the current policy. The boundary between red and gray is where the gamble stops beating someone's outside option — and it is ragged because circles and diamonds value the same gamble differently.",
+    "The checkbox holds the expected penalty pf fixed while you swing certainty against severity: same average punishment, different lottery. Try it under each population. The controls are now yours."
+  ],
+  3:[
+    "This map's two axes are your only choices: certainty p across, severity f up. Every point on the map is a policy.",
+    "Color is the total social loss of that policy: darker is worse. Somewhere on this map is a valley.",
+    "The dashed box holds parameters, not choices. They define the terrain: change one and the whole valley moves. Your levers only move you around on it.",
+    "Click or drag on the map to choose a policy, and try to find the bottom by feel before pressing Reveal. The controls are now yours."
+  ]
+};
+const tourState = {1:{step:0,unlocked:false},2:{step:0,unlocked:false},3:{step:0,unlocked:false}};
+const tourFieldsets = {1:["fs1"],2:["fs2","fs2w"],3:["fs3L","fs3W"]};
+function tourApply(n){
+  const st=tourState[n], N=TOURS[n].length;
+  if(st.step>=N-1) st.unlocked=true;      // reaching the last step unlocks for good
+  $("ttext"+n).textContent=TOURS[n][st.step];
+  $("tstep"+n).textContent=(st.step+1)+" / "+N;
+  $("tback"+n).disabled = st.step===0;
+  $("tnext"+n).disabled = st.step===N-1;
+  $("tskip"+n).style.display = st.unlocked ? "none" : "";
+  for(const f of tourFieldsets[n]) $(f).disabled = !st.unlocked;
+  ({1:render1,2:render2,3:()=>render3(true)})[n]();
+}
+for(const n of [1,2,3]){
+  $("tnext"+n).onclick=()=>{ const st=tourState[n];
+    st.step=Math.min(TOURS[n].length-1, st.step+1); tourApply(n); };
+  $("tback"+n).onclick=()=>{ const st=tourState[n];
+    st.step=Math.max(0, st.step-1); tourApply(n); };
+  $("tskip"+n).onclick=()=>{ tourState[n].step=TOURS[n].length-1; tourApply(n); };
+}
+
+/* =================== PANEL 1 =================== */
+const P1 = {W:680,H:400,M:{l:56,r:26,t:20,b:46}};
+function render1(){
+  const p=+$("p1").value, f=+$("f1").value, yt=+$("yt1").value, g=+$("g1").value;
+  const lvl = tourState[1].step;
+  $("o_p1").textContent=p.toFixed(2); $("o_f1").textContent=fmt$(f);
+  $("o_yt1").textContent=fmt$(yt);
+  $("o_g1").textContent = "γ = "+g.toFixed(2)+(g<0.97?" (risk-averse)":g>1.03?" (risk-loving)":" (risk-neutral)");
+
+  const {W,H,M}=P1, pw=W-M.l-M.r, ph=H-M.t-M.b;
+  const X=c=>M.l+(c/1050)*pw, Yc=u=>H-M.b-(u/1.04)*ph;
+  const Yf=Y1-f, ei=Y1-p*f;
+  const eu=p*un(Yf,g)+(1-p)*un(Y1,g), ce=Y1*Math.pow(eu,1/g);
+
+  const curve=[]; for(let c=0;c<=1000;c+=10) curve.push([X(c),Yc(un(c,g))]);
+  const ticks=[0,250,500,750,1000].map(c=>
+    `<line x1="${X(c)}" y1="${H-M.b}" x2="${X(c)}" y2="${H-M.b+4}" stroke="${GRAY}"/>
+     <text x="${X(c)}" y="${H-M.b+18}" fill="${GRAY}" font-size="11" text-anchor="middle">${c}</text>`).join("");
+
+  let s=`<svg viewBox="0 0 ${P1.W} ${P1.H}" role="img" aria-label="Utility curve with the punishment lottery">`;
+  s+=axes(W,H,M,"Income c (dollars)","Utility (share of U(1000))")+ticks;
+  s+=`<path d="${pathFrom(curve)}" fill="none" stroke="${NAVY}" stroke-width="2"/>`;
+  s+=`<text x="${X(280)}" y="${Yc(un(280,g))-12}" fill="${NAVY}" font-size="12" font-weight="600">U(c)</text>`;
+  if(lvl>=1){
+    s+=`<circle cx="${X(Yf)}" cy="${Yc(un(Yf,g))}" r="4.5" fill="${ACCENT}" stroke="#fff" stroke-width="2"><title>caught: ${fmt$(Yf)}</title></circle>`;
+    s+=`<circle cx="${X(Y1)}" cy="${Yc(un(Y1,g))}" r="4.5" fill="${ACCENT}" stroke="#fff" stroke-width="2"><title>free: ${fmt$(Y1)}</title></circle>`;
+    s+=`<text x="${X(Yf)}" y="${Yc(un(Yf,g))+20}" fill="${ACCENT}" font-size="11" font-weight="600" text-anchor="middle">caught</text>`;
+    s+=`<text x="${X(Y1)}" y="${Yc(un(Y1,g))-10}" fill="${ACCENT}" font-size="11" font-weight="600" text-anchor="middle">free</text>`;
+  }
+  if(lvl>=2 && f>0){
+    s+=`<line x1="${X(Yf)}" y1="${Yc(un(Yf,g))}" x2="${X(Y1)}" y2="${Yc(un(Y1,g))}"
+         stroke="${ACCENT}" stroke-width="2"/>`;
+    s+=`<text x="${X((Yf+Y1)/2)}" y="${Yc((un(Yf,g)+un(Y1,g))/2)+20}" fill="${ACCENT}" font-size="12"
+         font-weight="600" text-anchor="middle">the gamble</text>`;
+    s+=`<circle cx="${X(ei)}" cy="${Yc(eu)}" r="4.5" fill="${NAVY}" stroke="#fff" stroke-width="2"><title>expected utility at expected income ${fmt$(ei)}</title></circle>`;
+  }
+  if(lvl>=3){
+    s+=`<line x1="${X(ce)}" y1="${Yc(eu)}" x2="${X(ei)}" y2="${Yc(eu)}" stroke="${ORANGE}" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+    s+=`<line x1="${X(ce)}" y1="${Yc(eu)}" x2="${X(ce)}" y2="${H-M.b}" stroke="${ORANGE}" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+    s+=`<circle cx="${X(ce)}" cy="${Yc(eu)}" r="4.5" fill="${ORANGE}" stroke="#fff" stroke-width="2"><title>certainty equivalent ${fmt$(ce)}</title></circle>`;
+    s+=`<text x="${X(ce)}" y="${H-M.b-6}" fill="${ORANGE}" font-size="12" font-weight="700" text-anchor="middle">CE</text>`;
+  }
+  if(lvl>=4){
+    s+=`<path d="M${X(yt)-6} ${H-M.b+12} L${X(yt)+6} ${H-M.b+12} L${X(yt)} ${H-M.b+2} Z" fill="${NAVY}"/>`;
+    s+=`<text x="${X(yt)}" y="${H-M.b+32}" fill="${NAVY}" font-size="11" font-weight="600" text-anchor="middle">outside option</text>`;
+  }
+  s+=`</svg>`;
+  $("chart1").innerHTML=s;
+
+  $("r_ei").textContent=fmt$(ei);
+  $("r_ce").textContent=fmt$(ce);
+  if(lvl>=4){
+    const offend = ce>yt;
+    $("r_dec").textContent = offend ? "The gamble beats the outside option → offend"
+                                    : "The outside option wins → no offense";
+    $("r_dec").style.color = offend ? WARM : ACCENT;
+  } else $("r_dec").textContent="";
+}
+
+/* =================== PANEL 2 =================== */
+let K2=null; // held expected penalty, or null
+function pop2(){ return document.querySelector('input[name="pop2"]:checked').value; }
+function render2(){
+  let p=+$("p2").value, f=+$("f2").value;
+  if(K2!==null){
+    p=Math.max(p, K2/1000); $("p2").value=p;
+    f=Math.min(1000, K2/p); $("f2").value=f;
+  }
+  $("o_p2").textContent=p.toFixed(2); $("o_f2").textContent=fmt$(f);
+  $("o_k2").textContent = K2===null ? "off" : "pf = "+fmt$(K2);
+  $("f2").disabled = K2!==null || !tourState[2].unlocked;
+  $("r_pf2").textContent=fmt$(p*f);
+
+  const pop=pop2();
+  // dot grid: index i sorted by outside option; bottom row = lowest YT
+  const cell=34, r=11, W=10*cell+20, H=10*cell+16;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="100 people: who offends">`;
+  let n=0;
+  for(let i=0;i<100;i++){
+    const col=i%10, row=Math.floor(i/10);           // row 0 = lowest outside options
+    const cx=14+col*cell+cell/2, cy=H-10-row*cell-cell/2;
+    const g=popGamma(pop,i);
+    const off = ceOf(p,f,g)>YT[i];
+    if(off) n++;
+    const paint = off ? `fill="${WARM}"` : `fill="#e6e9ec" stroke="#b7bfc7" stroke-width="1.5"`;
+    const tip=`<title>outside option ${fmt$(YT[i])}, ${g<1?"risk-averse":"risk-loving"} → ${off?"offends":"doesn't"}</title>`;
+    if(g<1)  // circle = risk-averse; diamond = risk-loving
+      s+=`<circle cx="${cx}" cy="${cy}" r="${r}" ${paint}>${tip}</circle>`;
+    else {
+      const d=r+1.5;
+      s+=`<path d="M${cx} ${cy-d} L${cx+d} ${cy} L${cx} ${cy+d} L${cx-d} ${cy} Z" ${paint}>${tip}</path>`;
+    }
+  }
+  s+=`</svg>`;
+  $("chart2").innerHTML=s;
+  $("r_n2").textContent=n;
+}
+$("hold2").addEventListener("change",e=>{
+  K2 = e.target.checked ? Math.round(+$("p2").value * +$("f2").value) : null;
+  render2();
+});
+$("sysA2").onclick=()=>{ $("p2").value=0.20; if(K2===null)$("f2").value=600; else K2=120; render2(); };
+$("sysB2").onclick=()=>{ $("p2").value=0.80; if(K2===null)$("f2").value=150; else K2=120; render2(); };
+
+/* =================== PANEL 3 =================== */
+let best3=Infinity, revealed3=false;
+const CV={W:560,H:430,M:{l:48,r:12,t:12,b:36}};
+const FIELD={key:null, canvas:null, Lmin:0, Lmax:0, opt:null};
+function world3(){ return {ep:+$("ep3").value, ef:+$("ef3").value, b:+$("b3").value,
+                           c:$("cheap3").checked?1.5:4}; }
+function cvX(p){ const {W,M}=CV; return M.l+((p-0.05)/0.90)*(W-M.l-M.r); }
+function cvY(f){ const {H,M}=CV; return H-M.b-((f-50)/950)*(H-M.t-M.b); }
+function buildField(w){
+  const key=`${w.ep}|${w.ef}|${w.b}|${w.c}`;
+  if(FIELD.key===key) return;
+  const {W,H,M}=CV, pw=W-M.l-M.r, ph=H-M.t-M.b;
+  const NP=91, NF=96;
+  const Ls=new Float64Array(NP*NF); let mn=Infinity,mx=-Infinity,opt=null;
+  for(let i=0;i<NP;i++){ const p=0.05+0.90*i/(NP-1);
+    for(let j=0;j<NF;j++){ const f=50+950*j/(NF-1);
+      const L=ledger(p,f,w.ep,w.ef,w.b,w.c).L; Ls[i*NF+j]=L;
+      if(L<mn){mn=L; opt={p,f,L};} if(L>mx)mx=L;
+    }}
+  const off=document.createElement("canvas"); off.width=CV.W; off.height=CV.H;
+  const ctx=off.getContext("2d");
+  ctx.fillStyle="#fcfcfb"; ctx.fillRect(0,0,CV.W,CV.H);
+  const lmn=Math.log(mn), lmx=Math.log(mn*5);   // saturate above 5× the valley so the basin is visible
+  const cw=pw/NP, chh=ph/NF;
+  for(let i=0;i<NP;i++) for(let j=0;j<NF;j++){
+    const t=Math.min(1,(Math.log(Ls[i*NF+j])-lmn)/(lmx-lmn));
+    const R=Math.round(236+(6-236)*t), G=Math.round(242+(47-242)*t), B=Math.round(248+(84-248)*t);
+    ctx.fillStyle=`rgb(${R},${G},${B})`;
+    ctx.fillRect(M.l+i*cw, H-M.b-(j+1)*chh, cw+0.6, chh+0.6);
+  }
+  // axes + ticks
+  ctx.strokeStyle=GRAY; ctx.lineWidth=1; ctx.beginPath();
+  ctx.moveTo(M.l,M.t); ctx.lineTo(M.l,H-M.b); ctx.lineTo(W-M.r,H-M.b); ctx.stroke();
+  ctx.fillStyle=GRAY; ctx.font="11px sans-serif"; ctx.textAlign="center";
+  for(const pv of [0.2,0.4,0.6,0.8]) ctx.fillText(pv.toFixed(1), cvX(pv), H-M.b+16);
+  ctx.fillText("Certainty p", M.l+pw/2, H-8);
+  ctx.textAlign="right";
+  for(const fv of [200,400,600,800,1000]) ctx.fillText(fv, M.l-6, cvY(fv)+4);
+  ctx.save(); ctx.translate(12, M.t+ph/2); ctx.rotate(-Math.PI/2);
+  ctx.textAlign="center"; ctx.fillText("Severity f ($)",0,0); ctx.restore();
+  FIELD.key=key; FIELD.canvas=off; FIELD.Lmin=mn; FIELD.Lmax=mx; FIELD.opt=opt;
+}
+function render3(fullField){
+  const p=+$("p3").value, f=+$("f3").value, w=world3();
+  $("o_p3").textContent=p.toFixed(2); $("o_f3").textContent=fmt$(f);
+  $("o_b3").textContent=w.b.toFixed(1); $("o_ep3").textContent=w.ep.toFixed(2); $("o_ef3").textContent=w.ef.toFixed(2);
+
+  if(fullField) buildField(w);
+  const cur=ledger(p,f,w.ep,w.ef,w.b,w.c);
+  if(cur.L<best3) best3=cur.L;
+  $("r_O3").textContent=cur.O.toFixed(0);
+  $("r_L3").textContent=cur.L.toFixed(1);
+  $("r_best3").textContent=isFinite(best3)?best3.toFixed(1):"—";
+
+  const cv=$("cv3"), ctx=cv.getContext("2d");
+  ctx.drawImage(FIELD.canvas,0,0);
+  if(revealed3 && FIELD.opt){
+    const o=FIELD.opt;
+    ctx.beginPath(); ctx.arc(cvX(o.p),cvY(o.f),8,0,7); ctx.strokeStyle=ORANGE; ctx.lineWidth=3; ctx.stroke();
+    ctx.fillStyle=ORANGE; ctx.font="700 12px sans-serif"; ctx.textAlign="left";
+    ctx.fillText("optimum", cvX(o.p)+12, cvY(o.f)+4);
+    $("r_opt3").textContent=`Optimum: p* = ${o.p.toFixed(2)}, f* = ${fmt$(o.f)}, L* = ${o.L.toFixed(1)}`;
+    $("r_opt3").style.color=ORANGE;
+  } else $("r_opt3").textContent="";
+  ctx.beginPath(); ctx.arc(cvX(p),cvY(f),6,0,7); ctx.fillStyle=NAVY; ctx.fill();
+  ctx.lineWidth=2.5; ctx.strokeStyle="#fff"; ctx.stroke();
+  ctx.fillStyle=NAVY; ctx.font="700 12px sans-serif"; ctx.textAlign="left";
+  ctx.fillText("you", cvX(p)+10, cvY(f)-8);
+
+  // ledger bar (vertical stack, right column)
+  const W=250, Hh=330, x0=128, bw=92, scale=Math.max(240,cur.L*1.15);
+  const segs=[["Damage",cur.D,WARM],["Enforcement",cur.C,ACCENT],["Punishment",cur.P,ORANGE]];
+  let y=Hh-24, lastLabelY=Infinity,
+      s=`<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Loss components">`;
+  s+=`<text x="${x0+bw/2}" y="${Hh-6}" fill="${NAVY}" font-size="13" font-weight="700" text-anchor="middle">L = ${cur.L.toFixed(1)}</text>`;
+  for(const [name,v,col] of segs){
+    const h=Math.max(0,(v/scale)*(Hh-60)-2);
+    y-=h;
+    s+=`<rect x="${x0}" y="${y}" width="${bw}" height="${h}" rx="4" fill="${col}"><title>${name} = ${v.toFixed(1)}</title></rect>`;
+    let ly=Math.min(y+h/2+4, lastLabelY-14);
+    lastLabelY=ly;
+    s+=`<text x="${x0-6}" y="${ly}" fill="${col}" font-size="11.5" font-weight="600" text-anchor="end">${name} ${v.toFixed(0)}</text>`;
+    y-=2;
+  }
+  s+=`<text x="${x0+bw/2}" y="${Math.max(y-10,14)}" fill="${GRAY}" font-size="11" text-anchor="middle">the ledger</text>`;
+  s+=`</svg>`;
+  $("chart3bar").innerHTML=s;
+}
+function canvasPick(e){
+  const cv=$("cv3"), r=cv.getBoundingClientRect();
+  const x=(e.clientX-r.left)*(CV.W/r.width), y=(e.clientY-r.top)*(CV.H/r.height);
+  const p=0.05+0.90*(x-CV.M.l)/(CV.W-CV.M.l-CV.M.r);
+  const f=50+950*(CV.H-CV.M.b-y)/(CV.H-CV.M.t-CV.M.b);
+  $("p3").value=Math.min(0.95,Math.max(0.05,p));
+  $("f3").value=Math.min(1000,Math.max(50,f));
+  render3(false);
+}
+$("cv3").addEventListener("pointerdown",e=>{ if(!tourState[3].unlocked) return;
+  $("cv3").setPointerCapture(e.pointerId); canvasPick(e); });
+$("cv3").addEventListener("pointermove",e=>{ if(!tourState[3].unlocked) return;
+  if(e.buttons===1) canvasPick(e); });
+
+/* =================== PANEL 4 =================== */
+const SWEEP={key:null, path:null, N:25};
+function buildPath(w){
+  const key=`${w.ep}|${w.ef}|${w.b}`;
+  if(SWEEP.key===key) return;
+  const path=[];
+  for(let k=0;k<SWEEP.N;k++){
+    const c=cOfT(k/(SWEEP.N-1));
+    const o=optimum(w.ep,w.ef,w.b,c,0.01,10);
+    path.push({c, ...o, O:ledger(o.p,o.f,w.ep,w.ef,w.b,c).O});
+  }
+  SWEEP.key=key; SWEEP.path=path;
+}
+function render4(){
+  const w=world3(), t=+$("c4").value, c=cOfT(t);
+  $("o_c4").textContent=c.toFixed(2);
+  buildPath(w);
+  const cur=optimum(w.ep,w.ef,w.b,c,0.01,10);
+  const O=ledger(cur.p,cur.f,w.ep,w.ef,w.b,c).O;
+  $("r_ps4").textContent=cur.p.toFixed(2);
+  $("r_fs4").textContent=fmt$(cur.f);
+  $("r_Os4").textContent=O.toFixed(0);
+  $("r_Ls4").textContent=cur.L.toFixed(1);
+
+  const W=680,H=400,M={l:60,r:30,t:26,b:46}, pw=W-M.l-M.r, ph=H-M.t-M.b;
+  const X=p=>M.l+(p/1)*pw, Yc=f=>H-M.b-(f/1050)*ph;
+  const xt=[0.2,0.4,0.6,0.8].map(v=>
+    `<line x1="${X(v)}" y1="${H-M.b}" x2="${X(v)}" y2="${H-M.b+4}" stroke="${GRAY}"/>
+     <text x="${X(v)}" y="${H-M.b+18}" fill="${GRAY}" font-size="11" text-anchor="middle">${v.toFixed(1)}</text>`).join("");
+  const yt=[200,400,600,800,1000].map(v=>
+    `<line x1="${M.l-4}" y1="${Yc(v)}" x2="${M.l}" y2="${Yc(v)}" stroke="${GRAY}"/>
+     <text x="${M.l-8}" y="${Yc(v)+4}" fill="${GRAY}" font-size="11" text-anchor="end">${v}</text>`).join("");
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Path of the optimum as detection cost falls">`;
+  s+=axes(W,H,M,"Optimal certainty p*","Optimal severity f* ($)")+xt+yt;
+  s+=`<path d="${pathFrom(SWEEP.path.map(q=>[X(q.p),Yc(q.f)]))}" fill="none" stroke="${NAVY}" stroke-width="2"/>`;
+  for(const q of SWEEP.path)
+    s+=`<circle cx="${X(q.p)}" cy="${Yc(q.f)}" r="2.6" fill="${NAVY}"><title>c = ${q.c.toFixed(2)}: p* = ${q.p.toFixed(2)}, f* = ${fmt$(q.f)}</title></circle>`;
+  const first=SWEEP.path[0], last=SWEEP.path[SWEEP.N-1];
+  s+=`<text x="${X(first.p)+14}" y="${Yc(first.f)+30}" fill="${GRAY}" font-size="11.5">detection expensive (the past)</text>`;
+  s+=`<text x="${X(last.p)-14}" y="${Yc(last.f)-18}" fill="${GRAY}" font-size="11.5" text-anchor="end">detection cheap (today)</text>`;
+  s+=`<circle cx="${X(cur.p)}" cy="${Yc(cur.f)}" r="6.5" fill="${ACCENT}" stroke="#fff" stroke-width="2.5"><title>you are here</title></circle>`;
+  s+=`<text x="${X(cur.p)+12}" y="${Yc(cur.f)-10}" fill="${ACCENT}" font-size="12" font-weight="700">c = ${c.toFixed(2)}</text>`;
+  s+=`</svg>`;
+  $("chart4").innerHTML=s;
+
+  // companion minis: L* and O* against the same technology axis
+  $("chart4minis").innerHTML =
+    miniSweep("Loss L* — always falls", SWEEP.path.map(q=>q.L), t, v=>v.toFixed(0)) +
+    miniSweep("Offenses O* — can go either way", SWEEP.path.map(q=>q.O), t, v=>v.toFixed(0));
+}
+function miniSweep(title, vals, tCur, vfmt){
+  const W=330,H=220,M={l:44,r:14,t:30,b:36}, pw=W-M.l-M.r, ph=H-M.t-M.b;
+  let vmin=Math.min(...vals), vmax=Math.max(...vals);
+  const pad=(vmax-vmin)*0.12+1e-9; vmin-=pad; vmax+=pad;
+  const X=t=>M.l+t*pw, Yc=v=>H-M.b-((v-vmin)/(vmax-vmin))*ph;
+  const N=vals.length;
+  const pts=vals.map((v,k)=>[X(k/(N-1)),Yc(v)]);
+  const kCur=Math.round(tCur*(N-1)), vCur=vals[kCur];
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}">`;
+  s+=`<text x="${M.l}" y="16" fill="${NAVY}" font-size="12" font-weight="700">${title}</text>`;
+  s+=`<line x1="${M.l}" y1="${H-M.b}" x2="${W-M.r}" y2="${H-M.b}" stroke="${GRAY}" stroke-width="1"/>
+      <line x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${H-M.b}" stroke="${GRAY}" stroke-width="1"/>`;
+  s+=`<text x="${M.l}" y="${H-M.b+16}" fill="${GRAY}" font-size="10.5">the past</text>
+      <text x="${W-M.r}" y="${H-M.b+16}" fill="${GRAY}" font-size="10.5" text-anchor="end">today</text>
+      <text x="${(M.l+W-M.r)/2}" y="${H-6}" fill="${GRAY}" font-size="11" text-anchor="middle">detection technology →</text>`;
+  s+=`<path d="${pathFrom(pts)}" fill="none" stroke="${NAVY}" stroke-width="2"/>`;
+  s+=`<circle cx="${X(kCur/(N-1))}" cy="${Yc(vCur)}" r="5.5" fill="${ACCENT}" stroke="#fff" stroke-width="2"><title>now: ${vfmt(vCur)}</title></circle>`;
+  s+=`<text x="${Math.min(X(kCur/(N-1))+9,W-M.r-30)}" y="${Yc(vCur)-9}" fill="${ACCENT}" font-size="11.5" font-weight="700">${vfmt(vCur)}</text>`;
+  s+=`</svg>`;
+  return `<div style="flex:1;min-width:280px">${s}</div>`;
+}
+
+/* ---------- wiring ---------- */
+for(const id of ["p1","f1","yt1","g1"]) $(id).addEventListener("input",render1);
+$("sysA").onclick=()=>{$("p1").value=0.20;$("f1").value=600;render1();};
+$("sysB").onclick=()=>{$("p1").value=0.80;$("f1").value=150;render1();};
+for(const id of ["p2","f2"]) $(id).addEventListener("input",render2);
+for(const el of document.querySelectorAll('input[name="pop2"]')) el.addEventListener("change",render2);
+for(const id of ["p3","f3"]) $(id).addEventListener("input",()=>render3(false));
+for(const id of ["b3","ep3","ef3"]) $(id).addEventListener("input",()=>{best3=Infinity;render3(true);render4();});
+$("cheap3").addEventListener("change",()=>{best3=Infinity;render3(true);});
+$("wCert").onclick=()=>{$("ep3").value=1.2;$("ef3").value=0.3;best3=Infinity;render3(true);render4();};
+$("wSev").onclick=()=>{$("ep3").value=0.3;$("ef3").value=1.2;best3=Infinity;render3(true);render4();};
+$("reveal3").onclick=()=>{revealed3=true;render3(false);};
+$("resetBest").onclick=()=>{best3=Infinity;render3(false);};
+$("c4").addEventListener("input",render4);
+
+tourApply(1); tourApply(2); tourApply(3); render4();
+</script>
+</body>
+</html>
